@@ -84,6 +84,30 @@ namespace :benchmark do
                             args.repeats)
   end
 
+  desc 'Allocation counts'
+  task allocations: :support do
+    if RUBY_VERSION < '2.1'
+      $stderr.puts "Cannot count allocations on #{RUBY_VERSION}."
+      exit 1
+    end
+
+    begin
+      require 'allocation_tracer'
+    rescue LoadError
+      $stderr.puts "Allocation tracking requires the gem 'allocation_tracer'."
+      exit 1
+    end
+
+    ObjectSpace::AllocationTracer.trace do
+      require 'mime/types'
+    end
+
+    count = ObjectSpace::AllocationTracer.allocated_count_table.values.
+      inject(:+)
+
+    puts "Allocations: #{count}"
+  end
+
   desc 'Show object counts'
   task objects: :support do
     GC.start
